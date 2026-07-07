@@ -1,0 +1,160 @@
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+
+const panels = [
+  {
+    image: "https://media.base44.com/images/public/user_6a41c4d745d7d2a779b8a3c7/299be3c6a_Heroimage1.png",
+    label: "L'Ambiance",
+    title: "Un cadre d'exception",
+    description: "Une atmosphère intimiste et chaleureuse, entre boiseries sombres et lumières tamisées."
+  },
+  {
+    image: "https://media.base44.com/images/public/user_6a41c4d745d7d2a779b8a3c7/87b0d1675_Heroimage2.png",
+    label: "La Musique",
+    title: "Des soirées en musique",
+    description: "Concerts live et mélodies acoustiques pour accompagner vos moments de convivialité."
+  },
+  {
+    image: "https://media.base44.com/images/public/user_6a41c4d745d7d2a779b8a3c7/6494218b2_Heroimage3.png",
+    label: "Le Feu",
+    title: "L'art du flambé",
+    description: "Nos chefs maîtrisent la flamme pour sublimer chaque plat avec passion et précision."
+  },
+  {
+    image: "https://media.base44.com/images/public/user_6a41c4d745d7d2a779b8a3c7/766adde59_Heroimage4.png",
+    label: "Les Saveurs",
+    title: "Une cuisine raffinée",
+    description: "Des produits frais, des saveurs méditerranéennes et marocaines sublimées."
+  }
+];
+
+export default function HeroPanels() {
+  const [hoveredIndex, setHoveredIndex] = useState(null);
+
+  return (
+    <section id="hero" className="relative w-full h-screen overflow-hidden">
+      {/* Logo overlay */}
+      <div className="absolute top-8 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
+        <img
+          src="https://media.base44.com/images/public/user_6a41c4d745d7d2a779b8a3c7/560a45fdc_Logov1.png"
+          alt="L'Atelier Restaurant"
+          className="h-16 md:h-20 w-auto drop-shadow-2xl"
+        />
+      </div>
+
+      {/* Desktop: 4 panels side by side */}
+      <div className="hidden md:flex w-full h-full">
+        {panels.map((panel, i) => {
+          const isHovered = hoveredIndex === i;
+          const someoneHovered = hoveredIndex !== null;
+          return (
+            <div
+              key={i}
+              className="relative overflow-hidden cursor-pointer"
+              style={{
+                flex: isHovered ? '4.5 1 0%' : someoneHovered ? '1 1 0%' : '1 1 0%',
+                transition: 'flex 0.6s cubic-bezier(0.22, 1, 0.36, 1)',
+              }}
+              onMouseEnter={() => setHoveredIndex(i)}
+              onMouseLeave={() => setHoveredIndex(null)}
+            >
+              {/* Background image */}
+              <div
+                className="absolute inset-0 bg-cover bg-center"
+                style={{
+                  backgroundImage: `url('${panel.image}')`,
+                  filter: someoneHovered && !isHovered ? 'blur(3px) brightness(0.4)' : 'blur(0px) brightness(0.7)',
+                  transition: 'filter 0.6s cubic-bezier(0.22, 1, 0.36, 1)',
+                  transform: isHovered ? 'scale(1.05)' : 'scale(1)',
+                  transitionProperty: 'filter, transform',
+                  transitionDuration: '0.6s',
+                }}
+              />
+
+              {/* Dark overlay */}
+              <div
+                className="absolute inset-0"
+                style={{
+                  background: isHovered
+                    ? 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.2) 50%, transparent 100%)'
+                    : 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 100%)',
+                  transition: 'background 0.6s cubic-bezier(0.22, 1, 0.36, 1)',
+                }}
+              />
+
+              {/* Gold side border */}
+              {i > 0 && (
+                <div className="absolute left-0 top-[10%] bottom-[10%] w-[0.5px] bg-gold/30" />
+              )}
+
+              {/* Content */}
+              <div className="absolute bottom-0 left-0 right-0 p-8 z-10">
+                <p
+                  className="font-body text-xs tracking-[0.3em] uppercase mb-2"
+                  style={{
+                    color: '#C5A059',
+                    transition: 'all 0.4s cubic-bezier(0.22, 1, 0.36, 1)',
+                  }}
+                >
+                  {panel.label}
+                </p>
+                <h2
+                  className="font-heading text-2xl md:text-3xl font-light italic mb-2"
+                  style={{
+                    color: '#EBEBEB',
+                    transition: 'all 0.4s cubic-bezier(0.22, 1, 0.36, 1)',
+                  }}
+                >
+                  {panel.title}
+                </h2>
+                <p
+                  className="font-body text-sm leading-relaxed max-w-xs"
+                  style={{
+                    color: 'rgba(235,235,235,0.7)',
+                    opacity: isHovered ? 1 : 0,
+                    transform: isHovered ? 'translateY(0)' : 'translateY(12px)',
+                    transition: 'opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1), transform 0.5s cubic-bezier(0.22, 1, 0.36, 1)',
+                    transitionDelay: isHovered ? '0.15s' : '0s',
+                  }}
+                >
+                  {panel.description}
+                </p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Mobile: stacked panels */}
+      <div className="md:hidden flex flex-col w-full h-full">
+        {panels.map((panel, i) => (
+          <div key={i} className="relative flex-1 overflow-hidden">
+            <div
+              className="absolute inset-0 bg-cover bg-center"
+              style={{ backgroundImage: `url('${panel.image}')` }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 p-5 z-10">
+              <p className="font-body text-[10px] tracking-[0.3em] uppercase text-gold mb-1">
+                {panel.label}
+              </p>
+              <h2 className="font-heading text-xl font-light italic text-marble">
+                {panel.title}
+              </h2>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Scroll indicator */}
+      <motion.div
+        className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2"
+        animate={{ y: [0, 8, 0] }}
+        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <span className="font-body text-[10px] tracking-[0.2em] uppercase text-gold/60">Découvrir</span>
+        <div className="w-[1px] h-8 bg-gradient-to-b from-gold/60 to-transparent" />
+      </motion.div>
+    </section>
+  );
+}
