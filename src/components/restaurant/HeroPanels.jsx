@@ -141,7 +141,6 @@ export default function HeroPanels() {
     position: absolute;
     top: 0; left: 0;
     width: 100%; height: 100%;
-    background-color: rgba(38, 40, 50, 0.8);
     z-index: -1;
     opacity: 0;
     visibility: hidden;

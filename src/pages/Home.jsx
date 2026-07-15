@@ -1,12 +1,13 @@
 import React from 'react';
 import Navigation from '@/components/restaurant/Navigation';
 import HeroPanels from '@/components/restaurant/HeroPanels';
+import Marquee from '@/components/restaurant/Marquee';
+import GalleryMarquee from '@/components/restaurant/GalleryMarquee';
 import AboutSection from '@/components/restaurant/AboutSection';
+import MenuMarquee from '@/components/restaurant/MenuMarquee';
 import MenuSection from '@/components/restaurant/MenuSection';
-import GallerySection from '@/components/restaurant/GallerySection';
 import ReviewsSection from '@/components/restaurant/ReviewsSection';
 import InfoSection from '@/components/restaurant/InfoSection';
-import ReservationBar from '@/components/restaurant/ReservationBar';
 import Footer from '@/components/restaurant/Footer';
 import FluidCursor from '@/components/restaurant/FluidCursor';
 
@@ -22,19 +23,19 @@ export default function Home() {
         <div className="gold-line max-w-6xl mx-auto" />
       </div>
 
+      <Marquee />
+
+      <GalleryMarquee />
+
       <AboutSection />
 
       <div className="px-6 md:px-12">
         <div className="gold-line max-w-6xl mx-auto" />
       </div>
 
+      <MenuMarquee />
+
       <MenuSection />
-
-      <div className="px-6 md:px-12">
-        <div className="gold-line max-w-6xl mx-auto" />
-      </div>
-
-      <GallerySection />
 
       <div className="px-6 md:px-12">
         <div className="gold-line max-w-6xl mx-auto" />
@@ -49,10 +50,6 @@ export default function Home() {
       <InfoSection />
 
       <Footer />
-      <ReservationBar />
-
-      {/* Bottom padding for sticky bar */}
-      <div className="h-16" />
     </div>
   );
 }
