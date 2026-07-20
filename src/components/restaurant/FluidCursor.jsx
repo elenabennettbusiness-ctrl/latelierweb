@@ -630,13 +630,27 @@ export default function FluidCursor() {
       pointers[0].color = generateColor();
     };
 
+    // Touch/coarse-pointer devices (phones, tablets) must never have this
+    // listener attached: it calls preventDefault() on every touchmove to
+    // feed drag coordinates into the fluid sim, which otherwise blocks all
+    // native touch scrolling on the page. There's no cursor to follow on
+    // a touch device anyway, so the effect simply doesn't react to touch.
+    const isCoarsePointer =
+      typeof window !== 'undefined' &&
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(pointer: coarse)').matches;
+
     document.body.addEventListener('mousemove', onMouseMove);
-    document.body.addEventListener('touchmove', onTouchMove, { passive: false });
+    if (!isCoarsePointer) {
+      document.body.addEventListener('touchmove', onTouchMove, { passive: false });
+    }
 
     return () => {
       cancelAnimationFrame(rafId);
       document.body.removeEventListener('mousemove', onMouseMove);
-      document.body.removeEventListener('touchmove', onTouchMove);
+      if (!isCoarsePointer) {
+        document.body.removeEventListener('touchmove', onTouchMove);
+      }
     };
   }, []);
 

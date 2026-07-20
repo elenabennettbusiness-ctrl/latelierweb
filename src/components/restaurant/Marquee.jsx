@@ -208,26 +208,62 @@ export default function Marquee() {
             opacity: 0.95;
           }
 
-          /* Separator — original diamond glyph ◇, recolored to a
-             premium light red with a soft ambient glow. text-shadow
-             is used (it follows the glyph cleanly and stays crisp at
-             every breakpoint, unlike a stacked box-shadow on a
-             no-width inline element). */
+          /* Separator — original diamond glyph ◇, treated as a small
+             decorative lamp. text-shadow is used (it follows the glyph
+             cleanly and stays crisp at every breakpoint, unlike a
+             stacked box-shadow on a no-width inline element).
+
+             The lamp breathes: warm ivory white → deep ruby → hold →
+             back. Only the emitted light changes — no scale, no
+             rotation, no movement, so layout never reflows and the
+             repaint stays confined to the glyph's own box. */
           .marquee__sep {
             font-family: 'Cormorant Garamond', serif;
             font-weight: 400;
             font-size: 96px;
             line-height: 1;
-            color: #FF6B6B;
-            opacity: 0.95;
             padding: 0 0.1em;
-            text-shadow:
-              0 0 6px rgba(255, 107, 107, 0.55),
-              0 0 14px rgba(255, 107, 107, 0.45),
-              0 0 26px rgba(255, 138, 128, 0.25);
             user-select: none;
             flex-shrink: 0;
             align-self: center;
+            opacity: 0.95;
+            color: #FFF1DE;
+            animation: lamp-breathe 5.5s ease-in-out infinite;
+          }
+
+          /* Glow radius and brightness swell ~12% into the red phase,
+             then settle back — the rhythm of a warm wall lamp, not a
+             neon sign. 0% and 100% are identical so the loop never
+             jumps. */
+          @keyframes lamp-breathe {
+            0% {
+              color: #FFF1DE;
+              text-shadow:
+                0 0 6px rgba(255, 238, 214, 0.50),
+                0 0 14px rgba(255, 226, 190, 0.38),
+                0 0 26px rgba(255, 214, 170, 0.20);
+            }
+            42% {
+              color: #D92B4E;
+              text-shadow:
+                0 0 7px rgba(217, 43, 78, 0.80),
+                0 0 16px rgba(196, 38, 70, 0.62),
+                0 0 29px rgba(172, 33, 62, 0.33);
+            }
+            58% {
+              color: #D92B4E;
+              text-shadow:
+                0 0 7px rgba(217, 43, 78, 0.80),
+                0 0 16px rgba(196, 38, 70, 0.62),
+                0 0 29px rgba(172, 33, 62, 0.33);
+            }
+            100% {
+              color: #FFF1DE;
+              text-shadow:
+                0 0 6px rgba(255, 238, 214, 0.50),
+                0 0 14px rgba(255, 226, 190, 0.38),
+                0 0 26px rgba(255, 214, 170, 0.20);
+            }
           }
 
           /* === TABLET === */
@@ -249,6 +285,17 @@ export default function Marquee() {
             .marquee__track {
               animation: none;
               transform: translateX(0);
+            }
+            /* Freeze the lamp at its warm-ivory rest state. The glow is
+               restated here because it only ever exists inside the
+               keyframes — animation: none alone would leave the glyph
+               unlit. */
+            .marquee__sep {
+              animation: none;
+              text-shadow:
+                0 0 6px rgba(255, 238, 214, 0.50),
+                0 0 14px rgba(255, 226, 190, 0.38),
+                0 0 26px rgba(255, 214, 170, 0.20);
             }
           }
         `,

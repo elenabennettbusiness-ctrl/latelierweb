@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Menu } from 'lucide-react';
+import { openReservation } from './ReservationModal';
 
 const navItems = [
   { id: 'hero', label: 'Accueil' },
@@ -152,7 +153,7 @@ export default function Navigation() {
           {/* Reserve CTA */}
           <div className="hidden md:flex items-center">
             <button
-              onClick={() => scrollTo('reservation')}
+              onClick={openReservation}
               className="nav-cta"
             >
               Réserver
@@ -204,7 +205,10 @@ export default function Navigation() {
               </motion.button>
             ))}
             <motion.button
-              onClick={() => scrollTo('reservation')}
+              onClick={() => {
+                setMobileOpen(false);
+                openReservation();
+              }}
               className="mt-4 font-body text-sm tracking-[0.2em] uppercase px-8 py-3 border border-gold text-gold"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
