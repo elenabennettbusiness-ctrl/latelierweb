@@ -45,7 +45,7 @@ export default function ReservationBar() {
         </div>
         <button
           onClick={openReservation}
-          className="font-body text-xs tracking-[0.2em] uppercase px-8 py-3 bg-obsidian text-gold hover:bg-obsidian/90 transition-colors w-full md:w-auto text-center"
+          className="font-body text-xs tracking-[0.2em] uppercase px-8 py-3 bg-obsidian text-gold hover:bg-obsidian/90 transition-colors w-full md:w-auto text-center rounded-[var(--btn-radius)]"
         >
           Réserver une Table
         </button>

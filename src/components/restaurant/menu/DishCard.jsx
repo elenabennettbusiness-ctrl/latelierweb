@@ -22,16 +22,29 @@ export default function DishCard({ dish, index = 0, eager = false, ariaHidden = 
       aria-hidden={ariaHidden ? 'true' : undefined}
     >
       <figure className="carte-card__figure">
-        <img
-          src={dish.image}
-          alt={ariaHidden ? '' : dish.name}
-          width="1334"
-          height="2000"
-          loading={eager ? 'eager' : 'lazy'}
-          decoding="async"
-          draggable="false"
-          className="carte-card__img"
-        />
+        {/* `media` is viewport-based, so a desktop viewport can never
+            select the mobile derivative. srcSet/sizes would not be safe
+            here: it also weighs devicePixelRatio, and a DPR-1 desktop
+            could pick the smaller file — changing what desktop loads. */}
+        <picture>
+          {dish.mobileImage && dish.mobileImage !== dish.image && (
+            <source
+              media="(max-width: 1024px)"
+              srcSet={dish.mobileImage}
+              type="image/webp"
+            />
+          )}
+          <img
+            src={dish.image}
+            alt={ariaHidden ? '' : dish.name}
+            width="1334"
+            height="2000"
+            loading={eager ? 'eager' : 'lazy'}
+            decoding="async"
+            draggable="false"
+            className="carte-card__img"
+          />
+        </picture>
       </figure>
       <p className="carte-card__name" aria-hidden={ariaHidden ? 'true' : undefined}>
         {dish.name}

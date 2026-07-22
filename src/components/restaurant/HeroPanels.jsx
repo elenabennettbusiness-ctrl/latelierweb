@@ -209,7 +209,7 @@ export default function HeroPanels() {
     overflow: hidden;
     padding-right: 20px;
     text-decoration: none;
-    border-radius: 3px;
+    border-radius: var(--btn-radius);
     transition: all 0.3s linear;
   }
   .btn-details .btn-text {
@@ -315,9 +315,9 @@ export default function HeroPanels() {
       </div>
       <div className="features-service-overlay"></div>
     </div>
-    <div className="features-service-item-mobile-bg" data-scene="comfort" style={{ backgroundImage: "url('https://media.base44.com/images/public/user_6a41c4d745d7d2a779b8a3c7/299be3c6a_Heroimage1.png')" }}></div>
+    <div className="features-service-item-mobile-bg" data-scene="comfort" style={{ backgroundImage: "url('/NewHero/1.webp')" }}></div>
   </div>
-  <figure className="features-service-img hover" data-scene="comfort" style={{ backgroundImage: "url('https://media.base44.com/images/public/user_6a41c4d745d7d2a779b8a3c7/299be3c6a_Heroimage1.png')" }}></figure>
+  <figure className="features-service-img hover" data-scene="comfort" style={{ backgroundImage: "url('/NewHero/1.webp')" }}></figure>
 
   <div className="features-service-item">
     <div className="features-service-content">
@@ -336,9 +336,9 @@ export default function HeroPanels() {
       </div>
       <div className="features-service-overlay"></div>
     </div>
-    <div className="features-service-item-mobile-bg" data-scene="live" style={{ backgroundImage: "url('https://media.base44.com/images/public/user_6a41c4d745d7d2a779b8a3c7/87b0d1675_Heroimage2.png')" }}></div>
+    <div className="features-service-item-mobile-bg" data-scene="live" style={{ backgroundImage: "url('/NewHero/2.webp')" }}></div>
   </div>
-  <figure className="features-service-img" data-scene="live" style={{ backgroundImage: "url('https://media.base44.com/images/public/user_6a41c4d745d7d2a779b8a3c7/87b0d1675_Heroimage2.png')" }}></figure>
+  <figure className="features-service-img" data-scene="live" style={{ backgroundImage: "url('/NewHero/2.webp')" }}></figure>
 
   <div className="features-service-item">
     <div className="features-service-content">
@@ -357,9 +357,9 @@ export default function HeroPanels() {
       </div>
       <div className="features-service-overlay"></div>
     </div>
-    <div className="features-service-item-mobile-bg" data-scene="gastronomy" style={{ backgroundImage: "url('https://media.base44.com/images/public/user_6a41c4d745d7d2a779b8a3c7/6494218b2_Heroimage3.png')" }}></div>
+    <div className="features-service-item-mobile-bg" data-scene="gastronomy" style={{ backgroundImage: "url('/NewHero/3.webp')" }}></div>
   </div>
-  <figure className="features-service-img" data-scene="gastronomy" style={{ backgroundImage: "url('https://media.base44.com/images/public/user_6a41c4d745d7d2a779b8a3c7/6494218b2_Heroimage3.png')" }}></figure>
+  <figure className="features-service-img" data-scene="gastronomy" style={{ backgroundImage: "url('/NewHero/3.webp')" }}></figure>
 
   <div className="features-service-item">
     <div className="features-service-content">
@@ -378,9 +378,9 @@ export default function HeroPanels() {
       </div>
       <div className="features-service-overlay"></div>
     </div>
-    <div className="features-service-item-mobile-bg" data-scene="cocktails" style={{ backgroundImage: "url('https://media.base44.com/images/public/user_6a41c4d745d7d2a779b8a3c7/766adde59_Heroimage4.png')" }}></div>
+    <div className="features-service-item-mobile-bg" data-scene="cocktails" style={{ backgroundImage: "url('/NewHero/4.webp')" }}></div>
   </div>
-  <figure className="features-service-img" data-scene="cocktails" style={{ backgroundImage: "url('https://media.base44.com/images/public/user_6a41c4d745d7d2a779b8a3c7/766adde59_Heroimage4.png')" }}></figure>
+  <figure className="features-service-img" data-scene="cocktails" style={{ backgroundImage: "url('/NewHero/4.webp')" }}></figure>
 
 </div>
     </>

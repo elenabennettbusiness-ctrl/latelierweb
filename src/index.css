@@ -29,6 +29,14 @@
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
+    /* Corner radius for every rectangular button on the public site.
+       Single source of truth: the gold CTA is copy-pasted into four
+       scoped style blocks (.nav-cta / .welcome-cta / .hrs-cta /
+       .loc-cta) because each lives inside its own component, so the
+       shared value has to travel as a variable rather than a class.
+       Deliberately small — enough to soften the corner, never enough
+       to read as a pill. */
+    --btn-radius: 4px;
     --font-heading: 'Cormorant Garamond', serif;
     --font-body: 'Inter', sans-serif;
     --font-display: 'Cormorant Garamond', serif;

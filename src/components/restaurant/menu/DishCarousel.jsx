@@ -115,6 +115,15 @@ const CAROUSEL_STYLES = `
     animation: carte-float 7s ease-in-out infinite;
     animation-delay: calc(min(var(--i, 0), 10) * 220ms);
   }
+  /* DishCard wraps the <img> in <picture> to serve mobile derivatives.
+     <picture> is display:inline by default, which would break the img's
+     height:100% (it resolves against its parent). This makes the wrapper
+     a transparent pass-through box so geometry is unchanged. */
+  .carte-card__figure > picture {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
   .carte-card__img {
     display: block;
     width: 100%;

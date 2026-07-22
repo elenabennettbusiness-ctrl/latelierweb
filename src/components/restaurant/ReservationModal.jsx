@@ -227,7 +227,7 @@ export default function ReservationModal() {
 
                 <button
                   type="submit"
-                  className="w-full py-4 mt-4 font-body text-xs tracking-[0.2em] uppercase bg-gold text-obsidian hover:bg-gold-dark transition-colors duration-300"
+                  className="w-full py-4 mt-4 font-body text-xs tracking-[0.2em] uppercase bg-gold text-obsidian hover:bg-gold-dark transition-colors duration-300 rounded-[var(--btn-radius)]"
                 >
                   Confirmer la Réservation
                 </button>

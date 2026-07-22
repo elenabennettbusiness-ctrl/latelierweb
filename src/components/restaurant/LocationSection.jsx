@@ -117,6 +117,7 @@ const SECTION_STYLES = `
     text-transform: uppercase;
     padding: 0.65rem 1.5rem;
     border: 1px solid rgba(197, 160, 89, 0.7);
+    border-radius: var(--btn-radius);
     color: #C5A059;
     background: transparent;
     cursor: pointer;

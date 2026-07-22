@@ -1,7 +1,18 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 export default function FluidCursor() {
   const canvasRef = useRef(null);
+  // Drives only the z-index below. Set once at mount, so the WebGL
+  // effect's useEffect([]) never re-runs on the back of it.
+  const [isTouch, setIsTouch] = useState(false);
+
+  useEffect(() => {
+    setIsTouch(
+      typeof window !== 'undefined' &&
+        typeof window.matchMedia === 'function' &&
+        window.matchMedia('(pointer: coarse)').matches
+    );
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -9,6 +20,11 @@ export default function FluidCursor() {
 
     canvas.width = canvas.clientWidth;
     canvas.height = canvas.clientHeight;
+
+    const isCoarsePointer =
+      typeof window !== 'undefined' &&
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(pointer: coarse)').matches;
 
     let config = {
       SIM_RESOLUTION: 128,
@@ -26,6 +42,28 @@ export default function FluidCursor() {
       TRANSPARENT: false,
       BLOOM: false,
     };
+
+    /* Mobile-only quality profile.
+
+       Mobile GPUs are tile-based deferred renderers (Adreno / Mali /
+       PowerVR) and pay a full tile store+load on every render-target
+       switch. The Jacobi pressure loop swaps FBOs once per iteration, so
+       at 20 iterations it alone accounts for two thirds of the ~29 target
+       switches this simulation performs every single frame. Desktop is an
+       immediate-mode GPU and absorbs that for free — which is exactly why
+       the effect lags on a phone and not on a laptop — so desktop keeps
+       every original number and only coarse pointers are retuned.
+
+       DYE_RESOLUTION is the other outlier: getResolution() scales by
+       aspect ratio, so on a 390x844 phone the old 512 produced a
+       512x1108 dye buffer against a 329k-pixel canvas — 1.7x more
+       fragment work than the screen can display. 256 lands at ~256x554,
+       comfortably under the canvas. */
+    if (isCoarsePointer) {
+      config.SIM_RESOLUTION = 96;
+      config.DYE_RESOLUTION = 256;
+      config.PRESSURE_ITERATIONS = 8;
+    }
 
     function pointerPrototype() {
       this.id = -1;
@@ -590,23 +628,84 @@ export default function FluidCursor() {
       }
     }
 
-    initFramebuffers();
-    multipleSplats(parseInt(Math.random() * 20) + 5);
+    /* Mobile replacement for calling resizeCanvas() from the frame loop.
 
-    let rafId;
+       Two problems with doing it per frame on a phone: reading
+       clientWidth/clientHeight forces a style+layout flush 60x a second,
+       and when the viewport height does shift — URL-bar collapse,
+       orientation change, keyboard — initFramebuffers() reallocates 12
+       textures and 12 framebuffers in the middle of the scroll. Debouncing
+       collapses the burst of resize events a URL-bar animation emits into
+       one reallocation after the gesture has settled. resizeCanvas() keeps
+       its own "did anything actually change" guard, so a spurious resize
+       still costs nothing. */
+    let resizeTimer;
+    const onResize = () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => { resizeCanvas(); wake(); }, 150);
+    };
+
+    /* Reduced motion on touch devices: never render a frame at all.
+
+       Scoped to coarse pointers on purpose — `freeze` is always false on
+       desktop, so the desktop effect keeps behaving exactly as it does
+       today, reduced-motion or not. With no render call the canvas simply
+       stays transparent, and the rAF loop never starts, which is real
+       battery saved rather than an invisible animation. */
+    const freeze =
+      isCoarsePointer &&
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    initFramebuffers();
+    if (!freeze) multipleSplats(parseInt(Math.random() * 20) + 5);
+
+    let rafId = null;
+    let idleFrames = 0;
+
+    /* DENSITY_DISSIPATION is 0.97 per frame, so 0.97^150 ~= 0.01: after
+       150 idle frames the dye is visually gone and there is nothing left
+       to integrate. Past that point the loop stops scheduling frames
+       instead of burning ~29 render-target switches on an invisible
+       simulation — which on a phone is the difference between the GPU
+       being busy permanently and being busy only while you touch it.
+       Applied to coarse pointers only; desktop never sleeps. */
+    const IDLE_FRAMES = 150;
+
     function update() {
-      resizeCanvas();
+      // Desktop keeps its per-frame resize check exactly as it was. Mobile
+      // uses the debounced resize listener below instead, so the frame loop
+      // never forces a style/layout flush.
+      if (!isCoarsePointer) resizeCanvas();
       if (splatStack.length > 0) multipleSplats(splatStack.pop());
+
+      let active = false;
       for (let i = 0; i < pointers.length; i++) {
         const p = pointers[i];
-        if (p.moved) { splat(p.x, p.y, p.dx, p.dy, p.color); p.moved = false; }
+        if (p.moved) { splat(p.x, p.y, p.dx, p.dy, p.color); p.moved = false; active = true; }
       }
+      idleFrames = active ? 0 : idleFrames + 1;
+
       if (!config.PAUSED) step(0.016);
       render(null);
+
+      /* Sleeping is visually seamless: render() always blits BACK_COLOR
+         first, so the frozen canvas is the same faint dark film it shows
+         while idle today. Nothing pops on sleep or on wake. */
+      if (isCoarsePointer && idleFrames > IDLE_FRAMES) { rafId = null; return; }
       rafId = requestAnimationFrame(update);
     }
 
-    update();
+    // Every mobile input path calls this; it is a no-op while the loop is
+    // already running, so it is safe to call on every touch event.
+    function wake() {
+      if (rafId == null && !freeze) {
+        idleFrames = 0;
+        rafId = requestAnimationFrame(update);
+      }
+    }
+
+    if (!freeze) update();
 
     const onMouseMove = (e) => {
       pointers[0].moved = pointers[0].down;
@@ -618,39 +717,168 @@ export default function FluidCursor() {
       pointers[0].color = generateColor();
     };
 
-    const onTouchMove = (e) => {
-      e.preventDefault();
-      const t = e.touches[0];
+    // Shared by the desktop and touch paths so both feed the simulation
+    // through identical maths — same 5.0 velocity scale, so a finger drag
+    // and a mouse drag produce the same trail.
+    //
+    // `color` is a parameter purely so the mobile path can hand over the
+    // shared POINTER_COLOR constant instead of allocating a fresh object
+    // on every touchmove. generateColor() is a constant function, so the
+    // values fed to splat() are identical either way.
+    const applyTouch = (t, color) => {
       pointers[0].moved = pointers[0].down;
       pointers[0].dx = (t.clientX - pointers[0].x) * 5.0;
       pointers[0].dy = (t.clientY - pointers[0].y) * 5.0;
       pointers[0].x = t.clientX;
       pointers[0].y = t.clientY;
       pointers[0].down = true;
-      pointers[0].color = generateColor();
+      pointers[0].color = color;
     };
 
-    // Touch/coarse-pointer devices (phones, tablets) must never have this
-    // listener attached: it calls preventDefault() on every touchmove to
-    // feed drag coordinates into the fluid sim, which otherwise blocks all
-    // native touch scrolling on the page. There's no cursor to follow on
-    // a touch device anyway, so the effect simply doesn't react to touch.
-    const isCoarsePointer =
-      typeof window !== 'undefined' &&
-      typeof window.matchMedia === 'function' &&
-      window.matchMedia('(pointer: coarse)').matches;
+    const onTouchMove = (e) => {
+      e.preventDefault();
+      applyTouch(e.touches[0], generateColor());
+    };
+
+    /* Coarse-pointer devices get their own listeners.
+
+       The handler above cannot be reused on a phone: its preventDefault()
+       kills native scrolling, which is why it was historically left
+       unattached here and the effect stayed inert on mobile. The three
+       handlers below never call preventDefault and are all registered
+       passive, so the browser never blocks on them — scrolling, taps,
+       links, the mobile Hero's swipe and every carousel behave exactly as
+       if these listeners did not exist.
+
+       Fine-pointer touchscreens (a Windows laptop with a touch display)
+       deliberately keep the old preventDefault path — that is existing
+       desktop behaviour and is not ours to change here. */
+    /* Scrolling always wins.
+
+       While the page is scrolling we stop feeding the simulation, so a
+       scroll frame costs the fluid nothing and the compositor keeps the
+       whole frame budget. The listener is passive and does no work beyond
+       setting a flag, so it never delays or blocks the gesture. */
+    let scrolling = false;
+    let scrollTimer;
+    const onScroll = () => {
+      scrolling = true;
+      pointers[0].moved = false; // drop any splat queued for this frame
+      clearTimeout(scrollTimer);
+      scrollTimer = setTimeout(() => { scrolling = false; }, 150);
+    };
+
+    /* Which finger owns the trail.
+
+       Without this, `touches[0]` silently re-binds to a different finger
+       the moment the first one lifts, and the next dx/dy is measured
+       across the gap between two fingers — a single enormous splat. That
+       is the sudden-jump / duplicate-trail glitch. Extra fingers are
+       ignored rather than fought over. */
+    let activeTouchId = null;
+
+    // The one splat-per-touchmove colour. generateColor() returns this
+    // same constant, so this only removes an allocation per event.
+    const POINTER_COLOR = { r: 150 / 255, g: 150 / 255, b: 150 / 255 };
+
+    const onTouchStartMobile = (e) => {
+      if (activeTouchId !== null) return; // already tracking a finger
+      const t = e.changedTouches[0];
+      activeTouchId = t.identifier;
+      pointers[0].x = t.clientX;
+      pointers[0].y = t.clientY;
+      // Zero velocity: drops dye exactly under the finger instead of
+      // streaking in from wherever the pointer was left last time.
+      pointers[0].dx = 0;
+      pointers[0].dy = 0;
+      pointers[0].down = true;
+      pointers[0].color = POINTER_COLOR;
+      // Grabbing a scrolling page to arrest its momentum must not paint.
+      // The position above is still seeded, so if the grab turns into a
+      // real drag it starts from the right place with no velocity spike.
+      if (scrolling) return;
+      pointers[0].moved = true;
+      wake();
+    };
+
+    const findActive = (list) => {
+      for (let i = 0; i < list.length; i++) {
+        if (list[i].identifier === activeTouchId) return list[i];
+      }
+      return null;
+    };
+
+    const onTouchMoveMobile = (e) => {
+      if (activeTouchId === null) return;
+      const t = findActive(e.changedTouches);
+      if (t == null) return; // a second finger moved — not ours
+      if (scrolling) {
+        /* Keep the tracked position current but never queue a splat: no
+           GPU work during the scroll, and no velocity spike when the
+           scroll settles and the same drag continues. */
+        pointers[0].x = t.clientX;
+        pointers[0].y = t.clientY;
+        pointers[0].dx = 0;
+        pointers[0].dy = 0;
+        return;
+      }
+      applyTouch(t, POINTER_COLOR);
+      wake();
+    };
+
+    // Stop feeding splats. DENSITY_DISSIPATION (0.97) then fades the trail
+    // out on the existing timing — no extra animation code needed. Only
+    // releases when the finger that *owns* the trail is the one lifting,
+    // so a second finger going up mid-drag changes nothing.
+    const onTouchEndMobile = (e) => {
+      if (activeTouchId === null || findActive(e.changedTouches) == null) return;
+      activeTouchId = null;
+      pointers[0].down = false;
+      pointers[0].moved = false;
+    };
 
     document.body.addEventListener('mousemove', onMouseMove);
-    if (!isCoarsePointer) {
+    // The nesting matters: a frozen coarse pointer must attach NOTHING.
+    // Flattening this into `if (isCoarsePointer && !freeze) … else …` sends
+    // reduced-motion phones into the desktop branch, whose preventDefault
+    // would block scrolling — the exact failure the comment above warns of.
+    if (isCoarsePointer) {
+      if (!freeze) {
+        document.body.addEventListener('touchstart', onTouchStartMobile, { passive: true });
+        document.body.addEventListener('touchmove', onTouchMoveMobile, { passive: true });
+        document.body.addEventListener('touchend', onTouchEndMobile, { passive: true });
+        document.body.addEventListener('touchcancel', onTouchEndMobile, { passive: true });
+        window.addEventListener('scroll', onScroll, { passive: true });
+        window.addEventListener('resize', onResize);
+        window.addEventListener('orientationchange', onResize);
+      }
+    } else {
       document.body.addEventListener('touchmove', onTouchMove, { passive: false });
     }
 
     return () => {
-      cancelAnimationFrame(rafId);
+      if (rafId != null) cancelAnimationFrame(rafId);
       document.body.removeEventListener('mousemove', onMouseMove);
-      if (!isCoarsePointer) {
+      if (isCoarsePointer) {
+        if (!freeze) {
+          clearTimeout(scrollTimer);
+          clearTimeout(resizeTimer);
+          document.body.removeEventListener('touchstart', onTouchStartMobile);
+          document.body.removeEventListener('touchmove', onTouchMoveMobile);
+          document.body.removeEventListener('touchend', onTouchEndMobile);
+          document.body.removeEventListener('touchcancel', onTouchEndMobile);
+          window.removeEventListener('scroll', onScroll);
+          window.removeEventListener('resize', onResize);
+          window.removeEventListener('orientationchange', onResize);
+        }
+      } else {
         document.body.removeEventListener('touchmove', onTouchMove);
       }
+      // React StrictMode double-invokes effects in dev; without an explicit
+      // release the discarded context leaks and browsers cap how many a
+      // page may hold.
+      const lose = gl.getExtension('WEBGL_lose_context');
+      if (lose) lose.loseContext();
     };
   }, []);
 
@@ -664,7 +892,11 @@ export default function FluidCursor() {
         width: '100%',
         height: '100%',
         pointerEvents: 'none',
-        zIndex: 9999,
+        /* Desktop keeps 9999 — untouched. On touch devices the effect
+           drops below the intentionally-stacked UI: dock (40), modal
+           (50), mobile menu (60), toasts (100), while still sitting
+           above the page background and every section. */
+        zIndex: isTouch ? 30 : 9999,
         opacity: 0.15,
       }}
     />

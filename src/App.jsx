@@ -6,6 +6,7 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from './components/ScrollToTop';
+import LoadingScreen from './components/LoadingScreen';
 import Home from './pages/Home';
 // Add page imports here
 
@@ -49,6 +50,9 @@ function App() {
       <QueryClientProvider client={queryClientInstance}>
         <Router>
           <ScrollToTop />
+          {/* Opening curtain. Sits above the auth gate so it also
+              covers that gate's generic spinner. */}
+          <LoadingScreen />
           <AuthenticatedApp />
         </Router>
         <Toaster />

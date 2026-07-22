@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { MENU } from './menu/menuData';
 import CategoryNav from './menu/CategoryNav';
 import DishCarousel from './menu/DishCarousel';
+import { preloadMenuImages, shouldSkipPreload } from './menu/preloadMenuImages';
 
 /* ============================================================
    MenuSection — "Notre Menu"
@@ -77,6 +78,72 @@ export default function MenuSection() {
   const headerRef = useReveal();
   const navRef = useReveal({ rootMargin: '0px 0px -5% 0px' });
   const panelRef = useReveal({ rootMargin: '0px 0px -5% 0px' });
+
+  /* Background-preload the mobile dish photos while the visitor is still
+     in Welcome/Gallery, so the Menu never shows a loading delay.
+
+     Mobile only — the early return means desktop runs no new code at all.
+     The observer watches #gallery from in here rather than adding anything
+     to GalleryMarquee or AboutSection, so neither of those is touched. */
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return undefined;
+    if (!window.matchMedia('(max-width: 1024px)').matches) return undefined;
+    if (shouldSkipPreload()) return undefined;
+
+    const controller = new AbortController();
+    let observer;
+    let idleId;
+    let started = false;
+
+    const start = () => {
+      if (started || controller.signal.aborted) return;
+      started = true;
+      // Active category first, so what the visitor sees on arrival is
+      // ready before anything else.
+      const ordered = [
+        ...(MENU[0]?.dishes || []),
+        ...MENU.slice(1).flatMap((c) => c.dishes),
+      ];
+      preloadMenuImages(
+        ordered.map((d) => d.mobileImage),
+        { concurrency: 3, signal: controller.signal }
+      );
+    };
+
+    // Only once the page has finished its own critical work, and only in
+    // idle time, so preloads never compete with above-the-fold rendering.
+    const onGallerySeen = () => {
+      const schedule = () => {
+        idleId = window.requestIdleCallback
+          ? window.requestIdleCallback(start, { timeout: 2000 })
+          : window.setTimeout(start, 200);
+      };
+      if (document.readyState === 'complete') schedule();
+      else window.addEventListener('load', schedule, { once: true });
+    };
+
+    const gallery = document.getElementById('gallery');
+    if (!gallery) return undefined;
+
+    observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          observer.disconnect();
+          onGallerySeen();
+        }
+      },
+      // Fires a little before Gallery is even on screen, giving the
+      // preload two full sections of runway before Menu is reached.
+      { rootMargin: '200px 0px' }
+    );
+    observer.observe(gallery);
+
+    return () => {
+      controller.abort();
+      observer?.disconnect();
+      if (idleId && window.cancelIdleCallback) window.cancelIdleCallback(idleId);
+    };
+  }, []);
 
   const activeCategory = MENU.find((c) => c.id === activeId) || MENU[0];
 

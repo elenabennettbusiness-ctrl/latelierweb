@@ -1,6 +1,7 @@
 import React from 'react';
 import Navigation from '@/components/restaurant/Navigation';
 import HeroPanels from '@/components/restaurant/HeroPanels';
+import MobileHero from '@/components/restaurant/MobileHero';
 import WelcomeSection from '@/components/restaurant/WelcomeSection';
 import Marquee from '@/components/restaurant/Marquee';
 import GalleryMarquee from '@/components/restaurant/GalleryMarquee';
@@ -15,6 +16,7 @@ import Footer from '@/components/restaurant/Footer';
 import FluidCursor from '@/components/restaurant/FluidCursor';
 import TypographyBackground from '@/components/restaurant/TypographyBackground';
 import ReservationModal from '@/components/restaurant/ReservationModal';
+import ContactDock from '@/components/restaurant/ContactDock';
 
 export default function Home() {
   return (
@@ -22,6 +24,9 @@ export default function Home() {
       <TypographyBackground />
       <FluidCursor />
       <Navigation />
+      {/* Phones get the full-screen story Hero; MobileHero renders
+          nothing above 768px, where HeroPanels stays untouched. */}
+      <MobileHero />
       <HeroPanels />
 
       {/* Gold separator */}
@@ -72,6 +77,9 @@ export default function Home() {
       <Footer />
 
       <ReservationModal />
+
+      {/* Floating WhatsApp / Instagram dock. Self-contained. */}
+      <ContactDock />
     </div>
   );
 }
